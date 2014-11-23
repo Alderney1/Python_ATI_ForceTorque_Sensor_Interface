@@ -67,7 +67,7 @@ def log(msg, log_level=LOG_LEVEL):
         print(str(log_level) + ' : ' + FILE + ' ::' +
               traceback.extract_stack()[-2][2] + ' : ' + msg)
 
-class ATI_INTERFACE(threading.Thread):
+class ATIController(threading.Thread):
     """Class for interacting withthe ati-box."""
     class Error(Exception):
         """Exception class."""
@@ -77,8 +77,8 @@ class ATI_INTERFACE(threading.Thread):
         def __repr__(self):
             return self.message
 
-    def __init__(self, host='127.0.0.1', # host to connect to realtime
-                 port=49152, # port to the sensor
+    def __init__(self, host=None, 
+                 port=None, # port to the sensor
                  name='1', # name of the ATI instance
                  timestamps=False, # taking timestamps ati class
                  timestamps_reciver=False, # taking timestamps receiver class
@@ -87,9 +87,17 @@ class ATI_INTERFACE(threading.Thread):
                  timeout=0.1, # to wait for get data
                  buffersize=40, # buffer size for buffer mode
                  log_level=3): # information level
-        # Assignment
-        self._host = host  # ATI net box IP address on the network
-        self._port = port # port of the ATI box
+        """
+        """
+        # Arg Assignment
+        self.__host = host  # ATI net box IP address on the network
+        self.__port = port # port of the ATI box
+        self.__name = kwargs.get('name','Invalid')
+        self.__timeout = kwargs.get('timeout',0.1)
+        self.__buffersize = kwargs.get('buffersize',1)
+        self.__log_level = kwargs.get('log_level',2)
+        
+
         self._streaming = STARTUP_STREAMING # streaming mode
         self._current_streaming = self._streaming # for state-machine
         self._log_level = log_level
