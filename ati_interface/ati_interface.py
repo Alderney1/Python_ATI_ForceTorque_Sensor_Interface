@@ -11,9 +11,9 @@ __status__ = "Development"
 """
 This module handle the interaction between the ft-sensor class and the
 ft-sensor. Here it can be data from the real sensor or from the
-simulation sensor. The sensor has sererval modes it can be running
+simulation sensor. The sensor has several modes it can be running
 in. The ATI class has to be run as a thread, and the result can
-recived in  synchronously and asynchronously way.
+received in  synchronously and asynchronously way.
 """
 #--------------------------------------------------------------------
 #IMPORT
@@ -79,17 +79,17 @@ class ATI_INTERFACE(threading.Thread):
                  port=49152, # port to the sensor
                  name='1', # name of the ATI instance
                  timestamps=False, # taking timestamps ati class
-                 timestamps_reciver=False, # taking tiemstamps reciver class
+                 timestamps_reciver=False, # taking timestamps receiver class
                  headerstamps=False, # taking header information
                  socket_timeout=1.5, # timeout for the socket
                  timeout=0.1, # to wait for get data
                  buffersize=40, # buffer size for buffer mode
                  log_level=3): # information level
         # Assignment
-        self._host = host  # ATI net box IP adress on the network
+        self._host = host  # ATI net box IP address on the network
         self._port = port # port of the ATI box
         self._streaming = STARTUP_STREAMING # streaming mode
-        self._current_streaming = self._streaming # for statemachine
+        self._current_streaming = self._streaming # for state-machine
         self._log_level = log_level
         self._name = 'ATI#' + name
         self._timestamps = timestamps
@@ -97,7 +97,7 @@ class ATI_INTERFACE(threading.Thread):
         self._headerstamps = headerstamps
         self._socket_timeout = socket_timeout
         self._timeout = timeout
-        self._buffersize = buffersize # the buffersize of recived data
+        self._buffersize = buffersize # the buffer size of received data
 
         global sockATI
         sockATI = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -199,7 +199,7 @@ class ATI_INTERFACE(threading.Thread):
         return structformat
 
     def _calibration(self,received):
-        """Will calibrate the data, by separte the header and the data
+        """Will calibrate the data, by separate the header and the data
         and applied the factor to the data. Plus minus the bias from
         the data. When data is handled it is notified to waiting threads.
         Inputs:list-> data from the ft-sensor"""
@@ -273,7 +273,7 @@ class ATI_INTERFACE(threading.Thread):
         """Call by get_data_ATI, to observe when this thread has
         sampled. Wait until a notified or a timeout occurs.
         - timeout: when a timeout occur,floating point,[s]."""
-        #log('Performing wait for ilde', self._log_level)
+        #log('Performing wait for idle', self._log_level)
         self._getdata_condition.acquire() # Acquire the underlying lock
         status = self._getdata_condition.wait(timeout)
         self._getdata_condition.release() # Release the underlying lock
@@ -308,7 +308,7 @@ class ATI_INTERFACE(threading.Thread):
         """STOP_STREAMING """
         log('STOP STREAMING MODE', self._log_level)
         if self._current_streaming == STOP_STREAMING: #Stop streaming, will continue to send stop request until it response appears.
-            if self._data != None: # If it still receiving data, send stop request agian
+            if self._data != None: # If it still receiving data, send stop request again
                 self._send_request(streaming=self._streaming,samples=self._samples)
             elif self._data == None: #  Receiving None data
                 self._operational_mode = self._current_streaming
@@ -320,7 +320,7 @@ class ATI_INTERFACE(threading.Thread):
         if self._current_streaming == REALTIME_STREAMING and self._samples == INFINITE_STREAMING: #For inifinty streaming
              if self._data == None: # none data, because of timeout
                  self._send_request(streaming=self._streaming,samples=self._samples)
-             elif self._data != None: # data recived
+             elif self._data != None: # data received
                  self._operational_mode = self._current_streaming
                  self._calibration(received=self._data)
 
@@ -334,12 +334,12 @@ class ATI_INTERFACE(threading.Thread):
                 self._calibration(received=self._data)
 
     def _realtime_streaming_buffered_mode(self):
-        """Realtime buffered streaming, with a certain number of samples or infinifte sampling."""
+        """Realtime buffered streaming, with a certain number of samples or infinite sampling."""
         log('REALTIME_BUFFERED_STREAMING MODE', self._log_level)
         if self._current_streaming == REALTIME_BUFFERED_STREAMING and self._samples == INFINITE_STREAMING: #For RealTime and infinite
             if self._data == None: # none data, because of timeout
                 self._send_request(streaming=self._streaming,samples=self._samples)
-            elif self._data != None: # data recived
+            elif self._data != None: # data received
                 self._operational_mode = self._current_streaming
                 self._calibration(received=self._data)
 
