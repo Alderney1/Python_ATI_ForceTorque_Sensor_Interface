@@ -33,10 +33,7 @@ sys.path.remove('C:\mats\git_mats\DeviceSocketInterface/code')
 #General
 LOG_LEVEL = 2 # Information level
 ALWAYS_LOG_LEVEL = 1 # print always
-FILE = 'ati_interface'
-FILEREC = 'ati_rec'
-NAME = 'ATI_INTERFACE'
-RECEIVE_FORMAT = '3I6i'
+RECEIVE_FORMAT = '3I6i' # Format from the ATI sensor
 COMMAND_HEADER = 0x1234 # Uint16_command_header
 #Calibration
 FORCE_CALIBRATION = 1000000.0
@@ -47,7 +44,7 @@ REALTIME_STREAMING = 0x0002 # Fast (up to 7000 Hz)
 REALTIME_BUFFERED_STREAMING = 0x0003 # Buffer mode
 MULTI_UNIT_STREAMING = 0X0004 # Multi mode
 INFINITE_STREAMING = 0x0000 #Infinite mode for realtime
-STARTUP_STREAMING = 'STOP' # Which mode it will be start up with
+STARTUP_STREAMING = 'STOP' # Mode it will start up with
 
 #Modes for the ati box
 modes = {STOP_STREAMING : 'stop_streaming_mode',
@@ -162,6 +159,15 @@ class ATIController(threading.Thread):
             self.__streaming = None
             raise self.Error('ATI: ' + 'Streaming setup for ATI is ' +' not known on arguments :'
                                 +  '"{}"'.format(str(streaming)))
+    def check_connection(self,**kwargs):
+        """
+        To veritfy the connection and statistical results.
+        """
+        samples = kwargs.get('samples',100)
+        timeout = kwargs.get('timeout',2)
+        self.set_streaming(streaming='STOP')
+        self.wait_for_mode(mode='STOP',timeout=timeout)
+        
 
     def  __send_request(self,header=COMMAND_HEADER,streaming=REALTIME_STREAMING,
                        samples=1):
