@@ -116,9 +116,9 @@ class ATIController(threading.Thread):
         self.__wait_realtime_mode.clear()
 
         self.__samples = 0
-        self.__info_data = None # Header force and torque data
-        self.__force_data = None
-        self.__torque_data = None
+        self._info_data = None # Header force and torque data
+        self._force_data = None
+        self._torque_data = None
         self.__timelist = None # file for timestamps
         self.__thread_init.clear()
         self.__thread_terminated.clear()
@@ -210,20 +210,21 @@ class ATIController(threading.Thread):
         unp = struct.unpack(self.get_format(),received) # unpack the message
         #print(unp)
         self.__getdata_condition.acquire()
-        self.__info_data = np.array([[unp[0],unp[1],unp[2]]])
-        self.__force_data = np.array([[unp[3]/FORCE_CALIBRATION,unp[4]/FORCE_CALIBRATION,unp[5]/FORCE_CALIBRATION]],dtype=np.float)
-        self.__torque_data = np.array([[unp[6]/TORQUE_CALIBRATION,unp[7]/TORQUE_CALIBRATION,unp[8]/TORQUE_CALIBRATION]],dtype=np.float)
+        self._info_data = np.array([[unp[0],unp[1],unp[2]]])
+        self._force_data = np.array([[unp[3]/FORCE_CALIBRATION,unp[4]/FORCE_CALIBRATION,unp[5]/FORCE_CALIBRATION]],dtype=np.float)
+        self._torque_data = np.array([[unp[6]/TORQUE_CALIBRATION,unp[7]/TORQUE_CALIBRATION,unp[8]/TORQUE_CALIBRATION]],dtype=np.float)
         for i in range(1, size):# loop the size of buffersize with calibration
-            self.__info_data = np.append(self._info_data,[[unp[0+i*9],unp[1+i*9],unp[2+i*9]]],axis=0)
-            self.__force_data = np.append(self._force_data,[[unp[3+i*9]/FORCE_CALIBRATION,unp[4+i*9]/FORCE_CALIBRATION,unp[5+i*9]/FORCE_CALIBRATION]],axis=0)
+            self._info_data = np.append(self._info_data,[[unp[0+i*9],unp[1+i*9],unp[2+i*9]]],axis=0)
+            self._force_data = np.append(self._force_data,[[unp[3+i*9]/FORCE_CALIBRATION,unp[4+i*9]/FORCE_CALIBRATION,unp[5+i*9]/FORCE_CALIBRATION]],axis=0)
             self.__torque_data = np.append(self._torque_data,[[unp[6+i*9]/TORQUE_CALIBRATION,unp[7+i*9]/TORQUE_CALIBRATION,unp[8+i*9]/TORQUE_CALIBRATION]],axis=0)
         #Notify to others tasks that new sample are ready
         self.__getdata_condition.notifyAll()
         self.__getdata_condition.release()
-        print(self.__info_data)
-        print(self.__force_data)
-        print(self.__torque_data)
-
+        #print('INFO')
+        #print(self._info_data)
+        #print(self._force_data)
+        #print(self._torque_data)
+        
     def get_data_ATI(self, sync=True,timeout=None,data_type=None):
         """Used to get data from the run method. Return the
         force and torque. Combined with
@@ -235,16 +236,19 @@ class ATIController(threading.Thread):
         - timeout: break wait operation with a timeout."""
         log('Performing get data from ATI', self.__log_level)
         if sync == True: # synchronously operation
+            print('in syc')
             if self.__wait_for_idle(timeout=timeout): # wait until data is recvied or timeout
                 if data_type == None:
-                    return self.__info_data, self.__force_data, self.__torque_data
+                    print('Getting data ATI-------')
+                    return self._info_data, self._force_data, self._torque_data
                 elif data_type == 'force':
-                    return self.__force_data
+                    return self._force_data
                 elif data_type == 'force_torque':
-                    return self.__force_data, self.__torque_data
+                    return self._force_data, self._torque_data
                 else:
                     raise self.Error('Data_type is not found !!!! : ' + '"{}"'.format(data_type))
             else:
+                print('NOT Getting data ATI-------')
                 if data_type == None:
                     return None, None, None
                 elif data_type == 'force':
@@ -256,7 +260,7 @@ class ATIController(threading.Thread):
          
         elif sync == False:
             if data_type == None:
-                return self.__info_data, self.__force_data, self.__torque_data
+                return self._info_data, self._force_data, self._torque_data
             elif data_type == 'force':
                 return self._force_data
             elif data_type == 'force_torque':
@@ -273,11 +277,12 @@ class ATIController(threading.Thread):
         """Call by get_data_ATI, to observe when this thread has
         sampled. Wait until a notified or a timeout occurs.
         - timeout: when a timeout occur,floating point,[s]."""
-        #log('Performing wait for idle', self._log_level)
+        log('Performing wait for idle', self.__log_level)
         self.__getdata_condition.acquire() # Acquire the underlying lock
         status = self.__getdata_condition.wait(timeout)
         self.__getdata_condition.release() # Release the underlying lock
-        if status:
+        print(status)
+        if status == None:
             return True
         else:
             return False
@@ -404,7 +409,6 @@ class ATIController(threading.Thread):
             If none data receiving, it will run at frequency specificed
             by the timeout."""
             self.__data = self.__io.get_data(sync= True,timeout=self.__timeout) # get data from receiver
-            
             if self.__data == None and self.__current_streaming != STOP_STREAMING:
                 log('TimeOut happens', self.__log_level)
                 pass
